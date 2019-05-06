@@ -22,9 +22,11 @@ import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.extension.ExtensionLoader;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
+import org.apache.dubbo.common.serialize.ObjectInput;
 import org.apache.dubbo.common.serialize.Serialization;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -69,10 +71,15 @@ public class CodecSupport {
         String serializationName = url.getParameter(Constants.SERIALIZATION_KEY, Constants.DEFAULT_REMOTING_SERIALIZATION);
         // Check if "serialization id" passed from network matches the id on this side(only take effect for JDK serialization), for security purpose.
         if (serialization == null
-                || ((id == 3 || id == 7 || id == 4) && !(serializationName.equals(ID_SERIALIZATIONNAME_MAP.get(id))))) {
+                || ((id == Constants.JAVA_SERIALIZATION_ID || id == Constants.NATIVE_JAVA_SERIALIZATION_ID || id == Constants.COMPACTED_JAVA_SERIALIZATION_ID)
+                && !(serializationName.equals(ID_SERIALIZATIONNAME_MAP.get(id))))) {
             throw new IOException("Unexpected serialization id:" + id + " received from network, please check if the peer send the right id.");
         }
         return serialization;
     }
 
+    public static ObjectInput deserialize(URL url, InputStream is, byte proto) throws IOException {
+        Serialization s = getSerialization(url, proto);
+        return s.deserialize(url, is);
+    }
 }
